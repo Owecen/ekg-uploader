@@ -2,6 +2,7 @@ import streamlit as st
 from PIL import Image
 import fitz  # PyMuPDF
 import tempfile
+import os
 
 def main():
     st.title("PDF zu Bild Konverter")
@@ -23,11 +24,22 @@ def main():
         
         for i, page in enumerate(doc):
             pix = page.get_pixmap(matrix=fitz.Matrix(zoom, zoom))
-            img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-            img_resized = img.resize((3300, 2550), Image.ANTIALIAS)
+            img = Image.frombuffer("RGB", [pix.width, pix.height], pix.samples, "raw", "RGB", 0, 1)
+            img_resized = img.resize((3300, 2550), Image.LANCZOS)
             output = f"converted_page_{i}.png"
             img_resized.save(output)
             st.image(output)
+            
+            # Hinzufügen des Download-Buttons
+            with open(output, "rb") as file:
+                btn_label = f"Download Seite {i+1}"
+                bytes_data = file.read()
+                st.download_button(
+                    label=btn_label,
+                    data=bytes_data,
+                    file_name=f"Seite_{i+1}.png",
+                    mime="image/png"
+                )
         
         # Schließen des fitz Dokuments und Löschen der temporären Datei
         doc.close()
@@ -35,3 +47,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
+
