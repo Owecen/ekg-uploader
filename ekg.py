@@ -1,6 +1,7 @@
 import streamlit as st
 from PIL import Image
 import fitz  # PyMuPDF
+import tempfile
 
 def main():
     st.title("PDF zu Bild Konverter")
@@ -10,7 +11,14 @@ def main():
     if uploaded_file is not None:
         st.write("Datei erfolgreich hochgeladen. Hier ist die konvertierte Seite:")
         
-        doc = fitz.open(uploaded_file)
+        # Erstellen einer temporären Datei auf dem Server
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
+            temp_file.write(uploaded_file.read())
+            temp_pdf_file_path = temp_file.name
+        
+        # Öffnen der temporären Datei mit fitz
+        doc = fitz.open(temp_pdf_file_path)
+        
         zoom = 4.17  # 300 dpi / 72 dpi
         
         for i, page in enumerate(doc):
@@ -20,6 +28,10 @@ def main():
             output = f"converted_page_{i}.png"
             img_resized.save(output)
             st.image(output)
+        
+        # Schließen des fitz Dokuments und Löschen der temporären Datei
+        doc.close()
+        os.remove(temp_pdf_file_path)
 
 if __name__ == "__main__":
     main()
